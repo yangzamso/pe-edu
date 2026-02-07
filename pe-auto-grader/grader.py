@@ -149,13 +149,12 @@ class ExcelGrader:
         # '채점결과' 시트 생성 (중복 시 번호 부여)
         base_name = "채점결과"
         target_sheet_name = base_name
-        counter = 1
         
-        while target_sheet_name in new_wb.sheetnames:
-            counter += 1
-            target_sheet_name = f"{base_name}({counter})"
+        # [수정] 기존 '채점결과' 시트가 있다면 삭제 후 새로 생성
+        if base_name in new_wb.sheetnames:
+            del new_wb[base_name]
             
-        target_sheet = new_wb.create_sheet(target_sheet_name)
+        target_sheet = new_wb.create_sheet(base_name)
         
         # 헤더 텍스트 입력 (O, AE, AF)
         for sheet in [source_sheet, target_sheet]:
