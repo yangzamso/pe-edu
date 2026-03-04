@@ -13,7 +13,6 @@ import streamlit as st
 
 
 EXPECTED_COLUMNS = ("고유번호", "파일")
-DEFAULT_XLSX = Path("data.xlsx")
 CHUNK_SIZE = 32768
 
 
@@ -70,7 +69,7 @@ def get_confirm_token(response: requests.Response) -> str | None:
     patterns = [
         r'confirm=([0-9A-Za-z_]+)',
         r'"downloadUrl":"[^"]*confirm=([0-9A-Za-z_]+)',
-        r"name=\"confirm\" value=\"([0-9A-Za-z_]+)\"",
+        r'name="confirm" value="([0-9A-Za-z_]+)"',
     ]
     for pattern in patterns:
         match = re.search(pattern, text)
@@ -161,33 +160,31 @@ def build_zip(file_paths: list[Path]) -> BytesIO:
     return buffer
 
 
-st.set_page_config(page_title="PE ID 이미지 다운로더", page_icon="📥", layout="centered")
+st.set_page_config(page_title="구글 자료 다운로더", page_icon="📥", layout="centered")
 
-st.title("PE ID 이미지 다운로더")
+st.title("구글 자료 다운로더")
 st.write(
-    "엑셀의 `고유번호`, `파일` 컬럼을 읽어 구글드라이브 원본 파일을 그대로 다운로드하고 "
-    "`고유번호 + 원본 확장자` 이름으로 ZIP에 담습니다."
+    "엑셀 파일을 업로드하면 `고유번호`, `파일` 컬럼을 읽어 구글드라이브 원본 파일을 그대로 다운로드하고 "
+    "`고유번호 + 원본 확장자` 이름으로 ZIP 파일을 생성합니다."
+)
+st.markdown(
+    """
+    - 다운로드할 구글드라이브 파일의 `공유` 버튼을 누른 뒤 `링크가 있는 모든 사용자`로 변경하고 `뷰어` 권한으로 설정해주세요.
+    - 공유 설정을 변경하지 않으면 다운로드가 되지 않습니다.
+    - 다운로드가 모두 완료된 뒤 약 15초 정도 지나면 `ZIP 다운로드` 버튼이 나타날 수 있습니다. 버튼을 눌러 압축 파일을 받은 뒤 압축을 풀어서 사용해주세요.
+    """
 )
 
 uploaded_file = st.file_uploader("엑셀 파일 업로드", type=["xlsx"])
 
-source = None
-source_label = None
-if uploaded_file is not None:
-    source = uploaded_file
-    source_label = uploaded_file.name
-elif DEFAULT_XLSX.exists():
-    source = DEFAULT_XLSX
-    source_label = str(DEFAULT_XLSX)
-
-if source is None:
-    st.warning("업로드한 파일이 없고 현재 폴더에 `data.xlsx`도 없습니다.")
+if uploaded_file is None:
+    st.info("엑셀 파일을 업로드한 뒤 내용을 확인하고 `다운로드 시작` 버튼을 눌러주세요.")
     st.stop()
 
-st.caption(f"현재 사용 파일: {source_label}")
+st.caption(f"업로드한 파일: {uploaded_file.name}")
 
 try:
-    preview_df = load_dataframe(source)
+    preview_df = load_dataframe(uploaded_file)
 except Exception as exc:
     st.error(f"엑셀을 읽는 중 오류가 발생했습니다: {exc}")
     st.stop()
@@ -203,7 +200,7 @@ if st.button("다운로드 시작", type="primary"):
     status_box = st.empty()
     failed_box = st.empty()
 
-    failed_box.info("실패한 항목이 생기면 여기 표시됩니다.")
+    failed_box.info("실패한 항목이 생기면 여기에 표시됩니다.")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         workspace = Path(temp_dir)
