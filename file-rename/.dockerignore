@@ -1,0 +1,6 @@
+.claude/
+data/
+*.xlsx
+__pycache__/
+*.pyc
+.git/
